@@ -27,7 +27,7 @@ WhaleTracker Bot is a **Telegram bot** that allows users to **track wallet trans
 1. Clone the repository:
    ```bash
    git clone https://github.com/Vishalgajjar21/WhaleTracker-.git
-   cd crypto-watcher-bot
+   cd WhaleTracker
    ```
 2. Install dependencies:
    ```bash
