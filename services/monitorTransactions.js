@@ -17,6 +17,18 @@ async function monitorTrackedWallets() {
       if (latestTx.hash === lastTxHash) continue; // No new transactions
 
       const ethValue = Web3.utils.fromWei(latestTx.value, "ether");
+      const existingOptions = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🔍Untrack Wallet",
+                callback_data: `untrack-wallet${walletAddress}`,
+              },
+            ],
+          ],
+        },
+      };
 
       const message =
         `🚨 *New Transaction Detected!* 🔥\n\n` +
@@ -30,7 +42,10 @@ async function monitorTrackedWallets() {
           latestTx.timeStamp * 1000
         ).toLocaleString()}\``;
 
-      bot.sendMessage(chatId, message, { parse_mode: "Markdown" });
+      bot.sendMessage(chatId, message, {
+        parse_mode: "Markdown",
+        reply_markup: existingOptions.reply_markup,
+      });
 
       // ✅ Update last transaction hash in the database
       await TrackedWallet.updateOne(
