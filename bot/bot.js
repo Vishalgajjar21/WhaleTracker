@@ -91,7 +91,7 @@ bot.on("callback_query", async (callbackQuery) => {
   const msg = callbackQuery.message;
   const data = callbackQuery.data;
   const chatId = msg.chat.id;
-  
+
   try {
     if (data.startsWith("refresh_tx_")) {
       const walletAddress = data.replace("refresh_tx_", "");
@@ -117,7 +117,10 @@ bot.on("callback_query", async (callbackQuery) => {
     } //
     else if (data.startsWith("untrack-wallet")) {
       const walletAddress = data.replace("untrack-wallet", "");
-
+      // Respond to Telegram to remove "loading" animation
+      await bot.answerCallbackQuery(callbackQuery.id, {
+        text: "✅ Untracked!",
+      });
       await untrackWallet(bot, msg, [null, walletAddress]);
     } //
     else if (data.startsWith("view_tx_")) {

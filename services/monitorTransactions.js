@@ -2,6 +2,7 @@ const { getTransactions, getBalance } = require("./etherscan");
 const TrackedWallet = require("../models/TrackedWallet");
 const bot = require("../bot/bot");
 const Web3 = require("web3");
+const { untrackWallet } = require("./command");
 
 async function monitorTrackedWallets() {
   try {
@@ -59,3 +60,23 @@ async function monitorTrackedWallets() {
 }
 
 module.exports = { monitorTrackedWallets };
+
+bot.on("callback_query", async (callbackQuery) => {
+  const msg = callbackQuery.message;
+  const data = callbackQuery.data;
+  const chatId = msg.chat.id;
+
+  try {
+    if (data.startsWith("untrack-wallet")) {
+      const walletAddress = data.replace("untrack-wallet", "");
+
+      await untrackWallet(bot, msg, [null, walletAddress]);
+    }
+    await bot.answerCallbackQuery(callbackQuery.id);
+  } catch (error) {
+    console.error("Error handling callback:", error);
+    await bot.answerCallbackQuery(callbackQuery.id, {
+      text: "Error processing request",
+    });
+  }
+});
