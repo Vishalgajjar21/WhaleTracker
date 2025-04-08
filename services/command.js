@@ -1,19 +1,29 @@
 const { getTransactions, getBalance } = require("../services/etherscan");
 const TrackedWallet = require("../models/TrackedWallet");
 const Web3 = require("web3");
-  
+
 const handleStart = (bot, msg) => {
   const chatId = msg.chat.id;
-  const options = {
+
+  const inlineOptions = {
     reply_markup: {
       inline_keyboard: [
-        [
-          { text: "🔍 Track Wallet", callback_data: "ask_wallet_address" },
-        ],
+        [{ text: "🔍 Track Wallet", callback_data: "ask_wallet_address" }],
       ],
     },
   };
+  const keyboardOptions = {
+    reply_markup: {
+      keyboard: [
+        ["➕ Add tracker", "❌ Remove tracker"],
+        // ["📊 Check Balance", "🧾 Check Address"],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false, // keep it open
+    },
+  };
 
+  // Send welcome message with inline buttons
   bot.sendMessage(
     chatId,
     `Welcome to ShadowBot 🚀  
@@ -26,8 +36,9 @@ Track wallet balances, transactions, and more.
 📌 \`/untrack 0xYourWalletAddress\` – Stop tracking a wallet  
 
 ℹ️ _Send a valid wallet address to get started!_`,
-    { parse_mode: "Markdown", reply_markup: options.reply_markup }
+    { parse_mode: "Markdown", reply_markup: inlineOptions.reply_markup }
   );
+  bot.sendMessage(chatId, "Choose from the menu below 👇", keyboardOptions);
 };
 
 async function handleTransactions(bot, msg, match) {

@@ -13,9 +13,11 @@ const {
 } = require("../services/command");
 
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const userActionMap = new Map();
 
 // ✅ Handle commands
 bot.onText(/\/start/, (msg) => handleStart(bot, msg));
+
 bot.onText(/\/transactions (0x[a-fA-F0-9]{40})/, (msg, match) =>
   handleTransactions(bot, msg, match)
 );
@@ -34,24 +36,24 @@ bot.onText(/\/analytics (0x[a-fA-F0-9]{40})/, (msg, match) =>
 );
 bot.onText(/\/help/, (msg) => {
   const helpMessage = `
-📌 *Bot Commands & Usage Guide*:
-
-🔹 */start* - Start the bot and get a welcome message.
-
-🔹 */transactions <wallet_address>* - View recent transactions of a wallet.
+  📌 *Bot Commands & Usage Guide*:
+  
+  🔹 */start* - Start the bot and get a welcome message.
+  
+  🔹 */transactions <wallet_address>* - View recent transactions of a wallet.
   *Example:* \`/transactions 0x1234567890abcdef...\`
-
-🔹 */track <wallet_address>* - Start tracking a wallet for real-time updates.
+  
+  🔹 */track <wallet_address>* - Start tracking a wallet for real-time updates.
   *Example:* \`/track 0x1234567890abcdef...\`
-
-🔹 */untrack <wallet_address>* - Stop tracking a wallet.
+  
+  🔹 */untrack <wallet_address>* - Stop tracking a wallet.
   *Example:* \`/untrack 0x1234567890abcdef...\`
-
+  
 🔹 */balance <wallet_address>* - Check the current balance of a wallet.
-  *Example:* \`/balance 0x1234567890abcdef...\`
+*Example:* \`/balance 0x1234567890abcdef...\`
 
 🔹 */analytics <wallet_address>* - Get detailed wallet analytics, including transaction history and trends.
-  *Example:* \`/analytics 0x1234567890abcdef...\`
+*Example:* \`/analytics 0x1234567890abcdef...\`
 
 ℹ️ *Use the correct Ethereum wallet address format (0x followed by 40 hex characters) when using commands.*
 
@@ -65,9 +67,40 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text?.trim();
 
-  // If the text is a valid Ethereum address, track the wallet
+  // Button-based flow
+  if (text === "➕ Add tracker") {
+    userActionMap.set(chatId, "add");
+    return bot.sendMessage(
+      chatId,
+      "📥 Please send the wallet address to *track*.",
+      { parse_mode: "Markdown" }
+    );
+  }
+
+  if (text === "❌ Remove tracker") {
+    userActionMap.set(chatId, "remove");
+    return bot.sendMessage(
+      chatId,
+      "📥 Please send the wallet address to *untrack*.",
+      { parse_mode: "Markdown" }
+    );
+  }
+
+  // If text is a valid Ethereum address
   if (Web3.utils.isAddress(text)) {
-    await trackWallet(bot, msg, [null, text]);
+    const action = userActionMap.get(chatId);
+    if (action === "add") {
+      await trackWallet(bot, msg, [null, text]);
+    } else if (action === "remove") {
+      await untrackWallet(bot, msg, [null, text]);
+    } else {
+      // Default behavior if no previous action is recorded
+      await bot.sendMessage(chatId, `✅ Received address: \`${text}\``, {
+        parse_mode: "Markdown",
+      });
+    }
+
+    userActionMap.delete(chatId);
     return;
   }
 
@@ -79,7 +112,6 @@ bot.on("message", async (msg) => {
     );
     return;
   }
-
   // If the message is neither a valid nor an invalid address, do nothing (ignore)
 });
 
@@ -87,11 +119,10 @@ bot.on("message", async (msg) => {
 bot.on("polling_error", (error) => console.error("Polling error:", error));
 
 // Add this after your command handlers
-bot.on("callback_query", async (callbackQuery) => {
+bot.on("callback_query", async (callbackQuery) => {   
   const msg = callbackQuery.message;
   const data = callbackQuery.data;
   const chatId = msg.chat.id;
-
   try {
     if (data.startsWith("refresh_tx_")) {
       const walletAddress = data.replace("refresh_tx_", "");
@@ -107,8 +138,6 @@ bot.on("callback_query", async (callbackQuery) => {
       const walletAddress = data.replace("refresh_balance_", "");
 
       await checkBalance(bot, msg, [null, walletAddress]);
-    } //
-    else if (data.startsWith("untrack-wallet")) {
     } //
     else if (data.startsWith("address-prompt")) {
       const walletAddress = data.replace("address-prompt", "");
@@ -140,5 +169,5 @@ bot.on("callback_query", async (callbackQuery) => {
     });
   }
 });
-console.log("🚀 Telegram Bot is running...");
+console.log("🤖 Telegram Bot is running...");
 module.exports = bot;
