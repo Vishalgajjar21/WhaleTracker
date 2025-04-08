@@ -119,7 +119,7 @@ bot.on("message", async (msg) => {
 bot.on("polling_error", (error) => console.error("Polling error:", error));
 
 // Add this after your command handlers
-bot.on("callback_query", async (callbackQuery) => {   
+bot.on("callback_query", async (callbackQuery) => {
   const msg = callbackQuery.message;
   const data = callbackQuery.data;
   const chatId = msg.chat.id;
@@ -132,7 +132,8 @@ bot.on("callback_query", async (callbackQuery) => {
       await bot.sendMessage(
         chatId,
         "📥 Please send your Ethereum wallet address:"
-      );
+      ),
+        userActionMap.set(chatId, "add");
     } //
     else if (data.startsWith("refresh_balance_")) {
       const walletAddress = data.replace("refresh_balance_", "");
